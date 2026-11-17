@@ -1,0 +1,59 @@
+{
+    "name": "rushphp/rush",
+    "description": "RUSH - Registry-driven Unified Shell Helper. A lightweight, extensible CLI runtime for tools.",
+    "type": "library",
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "RUSHphp",
+            "homepage": "https://github.com/rushphp"
+        }
+    ],
+    "keywords": [
+        "rush",
+        "cli",
+        "shell",
+        "registry",
+        "tool",
+        "automation",
+        "deploy",
+        "database"
+    ],
+    "support": {
+        "issues": "https://github.com/rushphp/rush/issues",
+        "source": "https://github.com/rushphp/rush"
+    },
+    "autoload": {
+        "psr-4": {
+            "Rush\\Manager\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "bin": [
+        "bin/rush"
+    ],
+    "require": {
+        "php": "^8.3",
+        "rushphp/contract": "^1.0",
+        "rushphp/support": "^1.0"
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^2.2",
+        "pestphp/pest": "^3.8"
+    },
+    "scripts": {
+        "stan": "phpstan analyse",
+        "test": "pest"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

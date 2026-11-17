@@ -1,0 +1,90 @@
+<?php declare(strict_types=1);
+
+namespace Rush\Manager;
+
+use Rush\Contract\OutputInterface;
+
+
+final class Output implements OutputInterface
+{
+    /** @var resource */
+    protected $stdout;
+
+    /** @var resource */
+    protected $stderr;
+
+    protected bool $ansi;
+
+
+    /**
+     * @param resource|null $stdout
+     * @param resource|null $stderr
+     */
+    public function __construct(
+        $stdout = null,
+        $stderr = null,
+    ) {
+        $this->stdout = $stdout ?? STDOUT;
+        $this->stderr = $stderr ?? STDERR;
+        $this->ansi = $this->supportsAnsi($this->stdout);
+    }
+
+
+    public function line(string $text = ''): void
+    {
+        $this->write($text, '');
+    }
+
+    public function info(string $text): void
+    {
+        $this->write($text, '36');
+    }
+
+    public function success(string $text): void
+    {
+        $this->write($text, '32');
+    }
+
+    public function warning(string $text): void
+    {
+        $this->write($text, '33');
+    }
+
+    public function error(string $text): void
+    {
+        if ( ! is_resource($this->stderr)) {
+            return;
+        }
+
+        fwrite($this->stderr, $this->color($text, '31') . PHP_EOL);
+    }
+
+    public function separator(): void
+    {
+        $this->line(str_repeat('-', 60));
+    }
+
+    protected function write(string $text, string $color): void
+    {
+        if ( ! is_resource($this->stdout)) {
+            return;
+        }
+
+        fwrite($this->stdout, $this->color($text, $color) . PHP_EOL);
+    }
+
+    protected function color(string $text, string $color): string
+    {
+        if ( ! $this->ansi || $color === '') {
+            return $text;
+        }
+
+        return "\033[{$color}m{$text}\033[0m";
+    }
+
+    /** @param resource $stream */
+    protected function supportsAnsi($stream): bool
+    {
+        return is_resource($stream) && function_exists('stream_isatty') && stream_isatty($stream);
+    }
+}
