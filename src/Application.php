@@ -18,7 +18,7 @@ use Throwable;
 
 final class Application implements ToolManagerInterface
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '0.1.0';
 
     /** @var array<string, ToolInterface> */
     private array $tools = [];

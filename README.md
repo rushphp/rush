@@ -11,6 +11,8 @@
 A lightweight, extensible CLI runtime for tools. One binary, one contract, one
 lifecycle: register tools, expose commands, keep automation predictable.
 
+> **Pre-1.0:** minor releases may include breaking changes.
+
 - **Registry-driven**: tools register through Composer metadata and `rush.json`.
 - **Unified**: deploy, database and project tasks share one interface.
 - **Shell Helper**: a practical terminal ally, without framework lock-in.
@@ -87,7 +89,7 @@ final class DeployTool implements ToolInterface
 
     public function description(): string { return 'Deploys the application.'; }
 
-    public function version(): string { return '1.0.0'; }
+    public function version(): string { return '0.1.0'; }
 
     public function commands(string $projectRoot): array
     {

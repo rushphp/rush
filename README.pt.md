@@ -11,6 +11,8 @@
 Um runtime de CLI leve e extensível para tools. Um binário, um contrato, um
 lifecycle: registre tools, exponha comandos e mantenha a automação previsível.
 
+> **Pré-1.0:** releases minor podem incluir mudanças incompatíveis.
+
 - **Registry-driven**: as tools se registram por metadados do Composer e `rush.json`.
 - **Unified**: deploy, banco de dados e tarefas do projeto compartilham uma única interface.
 - **Shell Helper**: um aliado prático no terminal, sem lock-in de framework.
@@ -87,7 +89,7 @@ final class DeployTool implements ToolInterface
 
     public function description(): string { return 'Deploys the application.'; }
 
-    public function version(): string { return '1.0.0'; }
+    public function version(): string { return '0.1.0'; }
 
     public function commands(string $projectRoot): array
     {

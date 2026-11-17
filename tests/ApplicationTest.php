@@ -194,6 +194,28 @@ test('exports config from tools that provide it', function (): void {
 });
 
 
+test('prints the package version', function (): void {
+    $root = makeProject([]);
+
+    $stdout = fopen('php://memory', 'w+');
+    $stderr = fopen('php://memory', 'w+');
+
+    if ($stdout === false || $stderr === false) {
+        throw new RuntimeException('could not open test streams');
+    }
+
+    $application = new Application($root, stdout: $stdout, stderr: $stderr);
+    $code = $application->run(['--version']);
+
+    rewind($stdout);
+
+    expect($code)->toBe(ExitCode::Success->value)
+        ->and(stream_get_contents($stdout))->toContain('rush 0.1.0');
+
+    FileSystem::removeDir($root);
+});
+
+
 test('runs a tool command after operator configuration', function (): void {
     $root = makeProject([]);
     OperatorFile::save($root, new Operator('Developer', 'developer@example.com'));
