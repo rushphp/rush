@@ -2,6 +2,7 @@
 /vendor/
 composer.lock
 composer.local.json
+composer.local.lock
 
 # PHPUnit / Pest
 .phpunit.result.cache
