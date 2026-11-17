@@ -1,3 +1,5 @@
+[English](README.md) | [Português](README.pt.md)
+
 ![PHP](https://img.shields.io/badge/PHP-%20^8.3-777BB4)
 ![PHPStan-Level](https://img.shields.io/badge/PHPStan-Level%209-224488)
 ![License](https://img.shields.io/badge/License-MIT-777)
@@ -110,14 +112,6 @@ A runtime image is available in `resources/docker/Dockerfile`:
 docker build -t rushphp/rush:local resources/docker
 docker run --rm -it -v "$PWD:/work" -w /work rushphp/rush:local php vendor/bin/rush list
 ```
-
-## 🧠 Design pillars
-
-1. Simplicity
-2. Maintainability
-3. Performance
-4. Portability (decoupling)
-5. Security
 
 ## 🤝 Contributions
 
