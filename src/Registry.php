@@ -97,7 +97,7 @@ final class Registry
 
             $seen[$class] = true;
             $tool = $this->instantiate($class);
-            $tools[$tool->key()] = $tool;
+            $this->addTool($tools, $tool);
         }
 
         $root = $this->readJson($this->projectRoot .'/composer.json');
@@ -106,8 +106,7 @@ final class Registry
             $class = self::toolClass($root['extra'] ?? null);
 
             if ($class !== null && ! isset($seen[$class])) {
-                $tool = $this->instantiate($class);
-                $tools[$tool->key()] = $tool;
+                $this->addTool($tools, $this->instantiate($class));
             }
         }
 
@@ -116,7 +115,7 @@ final class Registry
 
 
     /**
-     * @return list<array{name: string, extra: mixed}>
+     * @return list<array{extra: mixed}>
      */
     private function installedPackages(): array
     {
@@ -147,7 +146,6 @@ final class Registry
             }
 
             $result[] = [
-                'name' => is_string($package['name'] ?? null) ? $package['name'] : '',
                 'extra' => $package['extra'] ?? null,
             ];
         }
@@ -175,6 +173,21 @@ final class Registry
         $tool = $rush['tool'] ?? null;
 
         return is_string($tool) && $tool !== '' ? $tool : null;
+    }
+
+
+    /**
+     * @param array<string, ToolInterface> $tools
+     */
+    private function addTool(array &$tools, ToolInterface $tool): void
+    {
+        $key = $tool->key();
+
+        if (isset($tools[$key])) {
+            throw new RuntimeException("duplicate tool key: {$key}");
+        }
+
+        $tools[$key] = $tool;
     }
 
 

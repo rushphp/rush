@@ -88,6 +88,20 @@ final class Input implements InputInterface
             $options[$name] = $value;
         }
 
+        foreach ($definitions as $option) {
+            if (array_key_exists($option->name, $options)) {
+                continue;
+            }
+
+            if ($option->required) {
+                throw new InvalidArgumentException("missing required option: --{$option->name}");
+            }
+
+            if ($option->default !== null) {
+                $options[$option->name] = $option->default;
+            }
+        }
+
         return new self($options, $arguments);
     }
 

@@ -2,6 +2,7 @@
 
 use Rush\Manager\Registry;
 use Rush\Support\FileSystem;
+use Tests\Fixtures\DuplicateEchoTool;
 use Tests\Fixtures\EchoTool;
 
 function installedEcho(): string
@@ -74,6 +75,47 @@ test('throws when an enabled tool is not installed', function (): void {
 
     expect(fn () => (new Registry($root))->discover())
         ->toThrow(RuntimeException::class);
+
+    FileSystem::removeDir($root);
+});
+
+test('rejects duplicate tool keys', function (): void {
+    $root = makeProject([
+        'vendor/composer/installed.json' => json_encode([
+            'packages' => [
+                ['name' => 'acme/echo', 'extra' => ['rush' => ['tool' => EchoTool::class]]],
+                ['name' => 'acme/echo-duplicate', 'extra' => ['rush' => ['tool' => DuplicateEchoTool::class]]],
+            ],
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    expect(fn () => (new Registry($root))->discover())
+        ->toThrow(RuntimeException::class, 'duplicate tool key: echo');
+
+    FileSystem::removeDir($root);
+});
+
+test('rejects invalid installed.json', function (): void {
+    $root = makeProject([
+        'vendor/composer/installed.json' => 'not-json',
+    ]);
+
+    expect(fn () => (new Registry($root))->discover())
+        ->toThrow(RuntimeException::class, 'invalid JSON');
+
+    FileSystem::removeDir($root);
+});
+
+test('discovers a tool declared in the root composer.json', function (): void {
+    $root = makeProject([
+        'composer.json' => json_encode([
+            'extra' => ['rush' => ['tool' => EchoTool::class]],
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    $tools = (new Registry($root))->discover();
+
+    expect(array_keys($tools))->toBe(['echo']);
 
     FileSystem::removeDir($root);
 });
