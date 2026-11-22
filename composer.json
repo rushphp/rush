@@ -40,8 +40,8 @@
     ],
     "require": {
         "php": "^8.3",
-        "rushphp/contract": "^0.1",
-        "rushphp/support": "^0.1"
+        "rushphp/contract": "^0.1.0",
+        "rushphp/support": "^0.1.0"
     },
     "require-dev": {
         "phpstan/phpstan": "^2.2",
