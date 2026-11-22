@@ -2,7 +2,9 @@
 
 use Rush\Contract\CommandInterface;
 use Rush\Contract\ToolInterface;
+use Rush\Manager\Application;
 use Rush\Manager\Command\InstallCommand;
+use Rush\Manager\Command\ListCommand;
 use Rush\Manager\Command\OperatorCommand;
 use Rush\Manager\Input;
 use Rush\Manager\Output;
@@ -108,6 +110,54 @@ test('operator command configures and shows the identity', function (): void {
     expect(managerRead($show['stream']))
         ->toContain('name: Test Operator')
         ->toContain('email: test@example.com');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('operator command validates partial and invalid input', function (): void {
+    $root = managerRoot();
+    $command = new OperatorCommand($root);
+    $cases = [
+        [['--name=Test'], '--name and --email are required together'],
+        [['--email=test@example.com'], '--name and --email are required together'],
+        [['--name= ', '--email=test@example.com'], '--name must be a non-empty string'],
+        [['--name=Test', '--email=invalid'], '--email must be a valid email address'],
+    ];
+
+    foreach ($cases as [$tokens, $message]) {
+        expect(fn () => $command->run(
+            Input::parse($tokens, $command->options()),
+            managerOutput()['output'],
+        ))->toThrow(RuntimeException::class, $message);
+    }
+
+    FileSystem::removeDir($root);
+});
+
+
+test('list command reports tools and the empty state', function (): void {
+    $root = managerRoot();
+    $empty = new Application($root);
+    $list = new ListCommand($empty);
+    $emptyOutput = managerOutput();
+
+    expect($list->run(Input::parse([], $list->options()), $emptyOutput['output']))->toBe(0)
+        ->and(managerRead($emptyOutput['stream']))->toContain('no tools attached');
+
+    $application = new Application($root);
+    $application->attach(fakeTool('alpha'));
+    $application->attach(fakeTool('beta'));
+    $list = new ListCommand($application);
+    $output = managerOutput();
+
+    $list->run(Input::parse([], $list->options()), $output['output']);
+    $text = managerRead($output['stream']);
+
+    expect($text)->toContain('alpha')
+        ->and($text)->toContain('beta')
+        ->and($text)->toContain('1.0.0')
+        ->and($text)->toContain('Fake tool');
 
     FileSystem::removeDir($root);
 });

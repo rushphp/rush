@@ -119,3 +119,21 @@ test('discovers a tool declared in the root composer.json', function (): void {
 
     FileSystem::removeDir($root);
 });
+
+
+test('rejects invalid tool configuration', function (array $config, string $message): void {
+    $root = makeProject([
+        'rush.json' => json_encode($config, JSON_THROW_ON_ERROR),
+    ]);
+
+    expect(fn () => (new Registry($root))->discover())
+        ->toThrow(RuntimeException::class, $message);
+
+    FileSystem::removeDir($root);
+})->with([
+    'tools not object' => [['tools' => 'bad'], '"tools" must be an object'],
+    'empty key' => [['tools' => ['' => true]], 'non-empty strings'],
+    'invalid entry' => [['tools' => ['echo' => 123]], 'invalid entry'],
+    'key mismatch' => [['tools' => ['wrong' => ['class' => EchoTool::class]]], 'does not match'],
+    'not a tool' => [['tools' => ['echo' => ['class' => stdClass::class]]], 'does not implement ToolInterface'],
+]);
