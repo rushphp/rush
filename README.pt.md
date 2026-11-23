@@ -38,6 +38,15 @@ rush list
 `rush install` cria o layout local `.rush/` e solicita que cada tool prepare sua
 própria configuração.
 
+## 🎛️ Ergonomia de comandos
+
+- `rush --help`, `rush <tool> --help` e `rush <tool> <command> --help`.
+- Flags curtas: `-h` (ajuda), `-v` (versão) e clusters como `-ab`.
+- Opções repetíveis: `--tag=a --tag=b` (lidas com `InputInterface::strings()`).
+- Comandos de tool devem ser escopados pela key da tool (`code push`); comandos
+  reservados (`install`, `list`, `operator`) não podem ser sobrescritos.
+- Tools podem dispensar o gate de operador com `OperatorPolicyInterface`.
+
 ## 🧩 Tools
 
 O RUSH não inclui tools por padrão. Instale as que precisar:
