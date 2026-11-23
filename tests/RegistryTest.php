@@ -121,6 +121,63 @@ test('discovers a tool declared in the root composer.json', function (): void {
 });
 
 
+test('discovers tools from a legacy installed.json without a packages key', function (): void {
+    $root = makeProject([
+        'vendor/composer/installed.json' => json_encode([
+            ['name' => 'acme/echo', 'extra' => ['rush' => ['tool' => EchoTool::class]]],
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    expect(array_keys((new Registry($root))->discover()))->toBe(['echo']);
+
+    FileSystem::removeDir($root);
+});
+
+
+test('accepts extra.rush as a plain class string', function (): void {
+    $root = makeProject([
+        'vendor/composer/installed.json' => json_encode([
+            'packages' => [
+                ['name' => 'acme/echo', 'extra' => ['rush' => EchoTool::class]],
+            ],
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    $tools = (new Registry($root))->discover();
+
+    expect(array_keys($tools))->toBe(['echo']);
+
+    FileSystem::removeDir($root);
+});
+
+
+test('rejects an invalid rush.json', function (): void {
+    $root = makeProject([
+        'rush.json' => 'not-json',
+    ]);
+
+    expect(fn () => (new Registry($root))->discover())
+        ->toThrow(RuntimeException::class, 'invalid JSON');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('discovers a root composer tool declared as a string', function (): void {
+    $root = makeProject([
+        'composer.json' => json_encode([
+            'extra' => ['rush' => EchoTool::class],
+        ], JSON_THROW_ON_ERROR),
+    ]);
+
+    $tools = (new Registry($root))->discover();
+
+    expect(array_keys($tools))->toBe(['echo']);
+
+    FileSystem::removeDir($root);
+});
+
+
 test('rejects invalid tool configuration', function (array $config, string $message): void {
     $root = makeProject([
         'rush.json' => json_encode($config, JSON_THROW_ON_ERROR),

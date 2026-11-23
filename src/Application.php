@@ -5,6 +5,7 @@ namespace Rush\Manager;
 use InvalidArgumentException;
 use Rush\Contract\CommandInterface;
 use Rush\Contract\ExitCode;
+use Rush\Contract\OperatorPolicyInterface;
 use Rush\Contract\Option;
 use Rush\Contract\ProvidesConfigInterface;
 use Rush\Contract\ToolInterface;
@@ -100,9 +101,27 @@ final class Application implements ToolManagerInterface
             'operator' => new OperatorCommand($this->projectRoot),
         ];
 
+        $this->groups = [];
+
         foreach ($this->tools as $key => $tool) {
+            if (in_array($key, ['install', 'list', 'operator'], true)) {
+                throw new InvalidArgumentException("tool key '{$key}' is reserved");
+            }
+
             foreach ($tool->commands($this->projectRoot) as $name => $command) {
-                $this->commands[$name] = new OperatorRequiredCommand($command, $this->projectRoot);
+                if ($name !== $key && ! str_starts_with($name, $key .' ')) {
+                    throw new InvalidArgumentException(
+                        "tool '{$key}' must expose commands prefixed with '{$key} '; got '{$name}'",
+                    );
+                }
+
+                if (isset($this->commands[$name])) {
+                    throw new InvalidArgumentException("command '{$name}' is already registered");
+                }
+
+                $this->commands[$name] = $tool instanceof OperatorPolicyInterface && ! $tool->requiresOperator()
+                    ? $command
+                    : new OperatorRequiredCommand($command, $this->projectRoot);
             }
 
             $this->groups[$key] = [
@@ -122,6 +141,17 @@ final class Application implements ToolManagerInterface
     {
         $this->boot();
 
+        try {
+            return $this->dispatch($argv);
+        } finally {
+            $this->terminate();
+        }
+    }
+
+
+    /** @param list<string> $argv */
+    private function dispatch(array $argv): int
+    {
         $tokens = $argv;
 
         if ($tokens === []) {
@@ -134,12 +164,12 @@ final class Application implements ToolManagerInterface
             return $this->imperativeHelp($tokens, null);
         }
 
-        if ($tokens[0] === '--version') {
+        if ($tokens[0] === '--version' || $tokens[0] === '-v') {
             return $this->imperativeVersion($tokens, null);
         }
 
-        if (isset($this->groups[$tokens[0]]) && in_array($tokens[1] ?? null, ['--help', '--version'], true)) {
-            if ($tokens[1] === '--help') {
+        if (isset($this->groups[$tokens[0]]) && in_array($tokens[1] ?? null, ['--help', '-h', '--version', '-v'], true)) {
+            if ($tokens[1] === '--help' || $tokens[1] === '-h') {
                 return $this->imperativeHelp($tokens, $tokens[0]);
             }
 
@@ -163,8 +193,16 @@ final class Application implements ToolManagerInterface
             return ExitCode::Invalid->value;
         }
 
+        $remaining = array_slice($tokens, $consumed);
+
+        if (in_array('--help', $remaining, true) || in_array('-h', $remaining, true)) {
+            HelpRenderer::command($command->name(), $command, $this->output());
+
+            return ExitCode::Success->value;
+        }
+
         try {
-            $input = Input::parse(array_slice($tokens, $consumed), $command->options());
+            $input = Input::parse($remaining, $command->options());
         } catch (InvalidArgumentException $exception) {
             $this->output()->error($exception->getMessage());
 

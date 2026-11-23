@@ -60,6 +60,25 @@ final class HelpRenderer
     }
 
 
+    public static function command(
+        string $name,
+        CommandInterface $command,
+        OutputInterface $output,
+    ): void {
+        $output->line($name);
+        $output->line($command->description());
+        $output->line();
+        $output->line('Usage:');
+        $output->line('  '. $command->usage());
+
+        if ($command->options() !== []) {
+            $output->line();
+            $output->line('Options:');
+            self::options($command->options(), $output);
+        }
+    }
+
+
     /**
      * @param array<string, CommandInterface> $commands
      * @param list<Option> $globalOptions
@@ -112,10 +131,15 @@ final class HelpRenderer
     protected static function options(array $options, OutputInterface $output, string $indent = '  '): void
     {
         foreach ($options as $option) {
-            $label = $indent .'--'. $option->name;
+            $label = $indent .($option->short !== null ? '-'. $option->short .', ' : '    ')
+                .'--'. $option->name;
 
             if ($option->takesValue) {
                 $label .= '=<'. $option->valueName .'>';
+            }
+
+            if ($option->repeatable) {
+                $label .= ' (repeatable)';
             }
 
             $suffix = $option->required ? ' (required)' : '';
@@ -124,7 +148,7 @@ final class HelpRenderer
                 $suffix .= ' [default: '. (is_bool($option->default) ? ($option->default ? 'true' : 'false') : (string) $option->default) .']';
             }
 
-            $output->line(str_pad($label, 34) . $option->description . $suffix);
+            $output->line(str_pad($label, 38) . $option->description . $suffix);
         }
     }
 }

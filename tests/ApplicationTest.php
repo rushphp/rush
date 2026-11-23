@@ -11,6 +11,9 @@ use Rush\Support\Operator;
 use Rush\Support\OperatorFile;
 use Tests\CliFixtures;
 use Tests\Fixtures\EchoTool;
+use Tests\Fixtures\NoOperatorTool;
+use Tests\Fixtures\ReservedKeyTool;
+use Tests\Fixtures\UnscopedTool;
 use Tests\RecordingCommand;
 
 
@@ -55,14 +58,17 @@ test('collects positional arguments and stops option parsing after --', function
 });
 
 
-test('shows global help and rejects command-level help', function (): void {
+test('shows global help and command-level help', function (): void {
     $global = CliFixtures::run(recordingCommands(), []);
     $command = CliFixtures::run(recordingCommands(), ['demo', 'status', '--help']);
+    $short = CliFixtures::run(recordingCommands(), ['demo', 'status', '-h']);
 
     expect($global['stdout'])->toContain('Tools:')
         ->and($global['stdout'])->toContain('demo')
-        ->and($command['code'])->toBe(ExitCode::Invalid->value)
-        ->and($command['stderr'])->toContain('unknown option');
+        ->and($command['code'])->toBe(ExitCode::Success->value)
+        ->and($command['stdout'])->toContain('Usage:')
+        ->and($command['stdout'])->toContain('rush demo status')
+        ->and($short['stdout'])->toBe($command['stdout']);
 });
 
 
@@ -97,10 +103,10 @@ test('returns the command exit code', function (): void {
 
 test('returns failure when a command throws', function (): void {
     $commands = [
-        'boom' => new class implements CommandInterface {
+        'demo boom' => new class implements CommandInterface {
             public function name(): string
             {
-                return 'boom';
+                return 'demo boom';
             }
 
             public function description(): string
@@ -125,7 +131,7 @@ test('returns failure when a command throws', function (): void {
         },
     ];
 
-    $result = CliFixtures::run($commands, ['boom']);
+    $result = CliFixtures::run($commands, ['demo', 'boom']);
 
     expect($result['code'])->toBe(ExitCode::Failure->value)
         ->and($result['stderr'])->toContain('boom');
@@ -211,6 +217,48 @@ test('prints the package version', function (): void {
 
     expect($code)->toBe(ExitCode::Success->value)
         ->and(stream_get_contents($stdout))->toContain('rush 0.1.0');
+
+    FileSystem::removeDir($root);
+});
+
+
+test('rejects commands that are not scoped to the tool key', function (): void {
+    $application = new Application(makeProject([]));
+    $application->attach(new UnscopedTool());
+
+    expect(fn () => $application->run(['other']))
+        ->toThrow(InvalidArgumentException::class, 'prefixed');
+});
+
+
+test('rejects reserved tool keys', function (): void {
+    $application = new Application(makeProject([]));
+    $application->attach(new ReservedKeyTool());
+
+    expect(fn () => $application->run(['list']))
+        ->toThrow(InvalidArgumentException::class, 'reserved');
+});
+
+
+test('runs commands without an operator when the tool opts out', function (): void {
+    $root = makeProject([]);
+
+    $stdout = fopen('php://memory', 'w+');
+    $stderr = fopen('php://memory', 'w+');
+
+    if ($stdout === false || $stderr === false) {
+        throw new RuntimeException('could not open test streams');
+    }
+
+    $application = new Application($root, stdout: $stdout, stderr: $stderr);
+    $application->attach(new NoOperatorTool());
+
+    $code = $application->run(['noop', 'hello']);
+
+    rewind($stdout);
+
+    expect($code)->toBe(ExitCode::Success->value)
+        ->and(stream_get_contents($stdout))->toContain('hello');
 
     FileSystem::removeDir($root);
 });

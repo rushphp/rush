@@ -30,24 +30,33 @@ final class Output implements OutputInterface
     }
 
 
+    public function write(string $text): void
+    {
+        if ( ! is_resource($this->stdout)) {
+            return;
+        }
+
+        fwrite($this->stdout, $text);
+    }
+
     public function line(string $text = ''): void
     {
-        $this->write($text, '');
+        $this->writeLine($text, '');
     }
 
     public function info(string $text): void
     {
-        $this->write($text, '36');
+        $this->writeLine($text, '36');
     }
 
     public function success(string $text): void
     {
-        $this->write($text, '32');
+        $this->writeLine($text, '32');
     }
 
     public function warning(string $text): void
     {
-        $this->write($text, '33');
+        $this->writeLine($text, '33');
     }
 
     public function error(string $text): void
@@ -64,7 +73,7 @@ final class Output implements OutputInterface
         $this->line(str_repeat('-', 60));
     }
 
-    protected function write(string $text, string $color): void
+    protected function writeLine(string $text, string $color): void
     {
         if ( ! is_resource($this->stdout)) {
             return;

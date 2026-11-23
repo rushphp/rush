@@ -12,6 +12,7 @@ test('writes each output level to the correct stream', function (): void {
     }
 
     $output = new Output($stdout, $stderr);
+    $output->write('raw');
     $output->line('plain');
     $output->info('info');
     $output->success('success');
@@ -25,6 +26,7 @@ test('writes each output level to the correct stream', function (): void {
     $err = (string) stream_get_contents($stderr);
 
     expect($out)->toContain('plain')
+        ->and($out)->toContain('raw')
         ->and($out)->toContain('info')
         ->and($out)->toContain('success')
         ->and($out)->toContain('warning')
